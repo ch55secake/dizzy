@@ -1,7 +1,7 @@
 package client
 
 import (
-	"github.com/ch55secake/dizzy/src/model"
+	"github.com/ch55secake/dizzy/pkg/model"
 	"net/http"
 	"net/http/httptest"
 	"testing"

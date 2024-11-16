@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/ch55secake/dizzy/src/model"
+	"github.com/ch55secake/dizzy/pkg/model"
 	"io"
 	"log"
 	"net/http"
