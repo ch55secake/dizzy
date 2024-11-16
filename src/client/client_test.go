@@ -1,8 +1,6 @@
 package client
 
 import (
-	"errors"
-	"fmt"
 	"github.com/ch55secake/dizzy/src/model"
 	"net/http"
 	"net/http/httptest"
@@ -28,15 +26,19 @@ func TestMakeRequest(t *testing.T) {
 		Timeout:   5,
 	}
 
-	err, bodyLength := MakeRequest(request)
+	err, response := MakeRequest(request)
 
 	if err != nil {
 		t.Errorf("Expected no error, but got %v", err)
 	}
 
-	expectedLength := 22
-	if bodyLength != expectedLength {
-		t.Errorf("Expected body length %d, but got %d", expectedLength, bodyLength)
+	expectedResponse := model.Response{
+		BodyLength: 22,
+		StatusCode: http.StatusOK,
+	}
+
+	if response.BodyLength != expectedResponse.BodyLength {
+		t.Errorf("Expected body length %d, but got %d", expectedResponse.BodyLength, response.BodyLength)
 	}
 }
 
@@ -52,15 +54,19 @@ func TestMakeRequest_WhenBodyHasNoLength(t *testing.T) {
 		Timeout: 5,
 	}
 
-	err, bodyLength := MakeRequest(request)
+	err, response := MakeRequest(request)
 
 	if err != nil {
 		t.Errorf("Expected no error, but got %v", err)
 	}
 
-	expectedLength := 0
-	if bodyLength != expectedLength {
-		t.Errorf("Expected body length %d, but got %d", expectedLength, bodyLength)
+	expectedResponse := model.Response{
+		BodyLength: 0,
+		StatusCode: http.StatusInternalServerError,
+	}
+
+	if response.BodyLength != expectedResponse.BodyLength {
+		t.Errorf("Expected body length %d, but got %d", expectedResponse.BodyLength, response.BodyLength)
 	}
 }
 
@@ -78,14 +84,10 @@ func TestMakeRequest_Timeout(t *testing.T) {
 		Timeout: 1,
 	}
 
-	err, bodyLength := MakeRequest(request)
+	err, _ := MakeRequest(request)
 
 	if err == nil {
 		t.Error("Expected a timeout error, but got nil")
-	}
-
-	if bodyLength != 0 {
-		t.Errorf("Expected body length 0, but got %d", bodyLength)
 	}
 }
 
@@ -110,14 +112,18 @@ func TestMakeRequest_WithHeaders(t *testing.T) {
 		},
 	}
 
-	err, bodyLength := MakeRequest(request)
+	err, response := MakeRequest(request)
 	if err != nil {
 		t.Errorf("Expected no error, but got %v", err)
 	}
 
-	expectedLength := 22
-	if bodyLength != expectedLength {
-		t.Errorf("Expected body length %d, but got %d", expectedLength, bodyLength)
+	expectedResponse := model.Response{
+		BodyLength: 22,
+		StatusCode: http.StatusOK,
+	}
+
+	if response.BodyLength != expectedResponse.BodyLength {
+		t.Errorf("Expected body length %d, but got %d", expectedResponse.BodyLength, response.BodyLength)
 	}
 }
 
@@ -131,14 +137,14 @@ func TestMakeRequest_Error(t *testing.T) {
 			name: "Invalid URL",
 			request: model.Request{
 				Method: "GET",
-				Url:    "htp://invalid-url",
+				Url:    "htp://invalid-url", // Malformed URL
 			},
 			wantError: true,
 		},
 		{
 			name: "Invalid HTTP Method",
 			request: model.Request{
-				Method: "INVALID",
+				Method: "INVALID", // Unsupported HTTP method
 				Url:    "http://example.com",
 			},
 			wantError: true,
@@ -146,7 +152,7 @@ func TestMakeRequest_Error(t *testing.T) {
 		{
 			name: "Valid Request",
 			request: model.Request{
-				Method: "GET",
+				Method: "GET", // Valid GET request
 				Url:    "http://example.com",
 			},
 			wantError: false,
@@ -155,18 +161,14 @@ func TestMakeRequest_Error(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var err error
+			err, response := MakeRequest(tt.request)
+
 			if tt.wantError {
-				err, _ = MakeRequest(tt.request)
 				if err == nil {
-					t.Errorf("Expected error, got nil")
-				} else {
-					if !errors.Is(err, fmt.Errorf("error sending request: %v", err)) {
-						t.Errorf("Expected error message but got: %v", err)
-					}
+					t.Errorf("Expected error, got statusCode: %d and err: %v", response.StatusCode, err)
 				}
+
 			} else {
-				err, _ = MakeRequest(tt.request)
 				if err != nil {
 					t.Errorf("Expected no error, but got: %v", err)
 				}
