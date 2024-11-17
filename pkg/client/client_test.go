@@ -1,7 +1,6 @@
 package client
 
 import (
-	"github.com/ch55secake/dizzy/pkg/model"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -19,20 +18,24 @@ func TestMakeRequest(t *testing.T) {
 	}))
 	defer mockServer.Close()
 
-	request := model.Request{
+	r := Requester{
+		Timeout: 5,
+	}
+
+	request := Request{
 		Method:    "GET",
 		Url:       mockServer.URL,
 		Subdomain: "/banana",
 		Timeout:   5,
 	}
 
-	err, response := MakeRequest(request)
+	err, response := r.MakeRequest(request)
 
 	if err != nil {
 		t.Errorf("Expected no error, but got %v", err)
 	}
 
-	expectedResponse := model.Response{
+	expectedResponse := Response{
 		BodyLength: 22,
 		StatusCode: http.StatusOK,
 	}
@@ -49,19 +52,23 @@ func TestMakeRequest_WhenBodyHasNoLength(t *testing.T) {
 		}))
 		defer mockServer.Close()
 
-		request := model.Request{
+		request := Request{
 			Method:  "GET",
 			Url:     mockServer.URL,
 			Timeout: 5,
 		}
 
-		err, response := MakeRequest(request)
+		r := Requester{
+			Timeout: 5,
+		}
+
+		err, response := r.MakeRequest(request)
 
 		if err != nil {
 			t.Errorf("Expected no error, but got %v", err)
 		}
 
-		expectedResponse := model.Response{
+		expectedResponse := Response{
 			BodyLength: 0,
 			StatusCode: http.StatusInternalServerError,
 		}
@@ -81,13 +88,17 @@ func TestMakeRequest_Timeout(t *testing.T) {
 		}))
 		defer mockServer.Close()
 
-		request := model.Request{
+		request := Request{
 			Method:  "GET",
 			Url:     mockServer.URL,
 			Timeout: 1,
 		}
 
-		err, _ := MakeRequest(request)
+		r := Requester{
+			Timeout: 1,
+		}
+
+		err, _ := r.MakeRequest(request)
 
 		if err == nil {
 			t.Error("Expected a timeout error, but got nil")
@@ -107,7 +118,7 @@ func TestMakeRequest_WithHeaders(t *testing.T) {
 
 	defer mockServer.Close()
 
-	request := model.Request{
+	request := Request{
 		Method:  "GET",
 		Url:     mockServer.URL,
 		Timeout: 5,
@@ -116,12 +127,16 @@ func TestMakeRequest_WithHeaders(t *testing.T) {
 		},
 	}
 
-	err, response := MakeRequest(request)
+	r := Requester{
+		Timeout: 5,
+	}
+
+	err, response := r.MakeRequest(request)
 	if err != nil {
 		t.Errorf("Expected no error, but got %v", err)
 	}
 
-	expectedResponse := model.Response{
+	expectedResponse := Response{
 		BodyLength: 22,
 		StatusCode: http.StatusOK,
 	}
@@ -134,12 +149,12 @@ func TestMakeRequest_WithHeaders(t *testing.T) {
 func TestMakeRequest_Error(t *testing.T) {
 	tests := []struct {
 		name      string
-		request   model.Request
+		request   Request
 		wantError bool
 	}{
 		{
 			name: "Request should return an error when the url is invalid",
-			request: model.Request{
+			request: Request{
 				Method: "GET",
 				Url:    "htp://invalid-url", // Malformed URL
 			},
@@ -147,7 +162,7 @@ func TestMakeRequest_Error(t *testing.T) {
 		},
 		{
 			name: "Request should return an error when the http method is invalid",
-			request: model.Request{
+			request: Request{
 				Method: "INVALID", // Unsupported HTTP method
 				Url:    "http://example.com",
 			},
@@ -155,7 +170,7 @@ func TestMakeRequest_Error(t *testing.T) {
 		},
 		{
 			name: "Request should not error as it is a valid request, as a base test case",
-			request: model.Request{
+			request: Request{
 				Method: "GET", // Valid GET request
 				Url:    "http://example.com",
 			},
@@ -165,7 +180,11 @@ func TestMakeRequest_Error(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err, response := MakeRequest(tt.request)
+			r := Requester{
+				Timeout: 5,
+			}
+
+			err, response := r.MakeRequest(tt.request)
 
 			if tt.wantError {
 				if err == nil {

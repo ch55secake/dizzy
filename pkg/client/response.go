@@ -1,4 +1,4 @@
-package model
+package client
 
 type Response struct {
 	StatusCode int `json:"status_code"`

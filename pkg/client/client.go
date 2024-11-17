@@ -4,39 +4,42 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/ch55secake/dizzy/pkg/model"
 	"io"
 	"log"
 	"net/http"
 	"time"
 )
 
+type Requester struct {
+	Timeout time.Duration `json:"timeout"`
+}
+
 // MakeRequest will return either the error if it occurs or the length of the response body,
 // which could indicate that there is something on the path that was just requested for.
-func MakeRequest(request model.Request) (error, model.Response) {
+func (r *Requester) MakeRequest(request Request) (error, Response) {
 	c := http.Client{
-		Timeout: request.Timeout * time.Second,
+		Timeout: r.Timeout,
 	}
 
 	c.CheckRedirect = func(req *http.Request, via []*http.Request) error {
 		return http.ErrUseLastResponse
 	}
 
-	err, bodyLength, statusCode := sendRequest(request, c)
+	err, bodyLength, statusCode := r.sendRequest(request, c)
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
-			return fmt.Errorf("request timed out: %w", context.DeadlineExceeded), model.Response{
+			return fmt.Errorf("request timed out: %w", context.DeadlineExceeded), Response{
 				StatusCode: 408, // 408 indicates timeout
 				BodyLength: 0,
 			}
 		}
-		return fmt.Errorf("error fetching response, statusCode: %v bodyLength: %v, err: %v", statusCode, bodyLength, err), model.Response{
+		return fmt.Errorf("error fetching response, statusCode: %v bodyLength: %v, err: %v", statusCode, bodyLength, err), Response{
 			StatusCode: statusCode,
 			BodyLength: bodyLength,
 		}
 	}
 
-	response := model.Response{
+	response := Response{
 		StatusCode: statusCode,
 		BodyLength: bodyLength,
 	}
@@ -48,7 +51,7 @@ func MakeRequest(request model.Request) (error, model.Response) {
 }
 
 // sendRequest will send the request with the provided method from the request model.
-func sendRequest(request model.Request, client http.Client) (error, int, int) {
+func (r *Requester) sendRequest(request Request, client http.Client) (error, int, int) {
 	validMethods := map[string]bool{
 		http.MethodGet:     true,
 		http.MethodHead:    true,
