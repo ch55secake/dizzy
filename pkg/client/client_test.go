@@ -43,52 +43,56 @@ func TestMakeRequest(t *testing.T) {
 }
 
 func TestMakeRequest_WhenBodyHasNoLength(t *testing.T) {
-	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusInternalServerError)
-	}))
-	defer mockServer.Close()
+	t.Run("should gracefully handle a request body when it has no length", func(t *testing.T) {
+		mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusInternalServerError)
+		}))
+		defer mockServer.Close()
 
-	request := model.Request{
-		Method:  "GET",
-		Url:     mockServer.URL,
-		Timeout: 5,
-	}
+		request := model.Request{
+			Method:  "GET",
+			Url:     mockServer.URL,
+			Timeout: 5,
+		}
 
-	err, response := MakeRequest(request)
+		err, response := MakeRequest(request)
 
-	if err != nil {
-		t.Errorf("Expected no error, but got %v", err)
-	}
+		if err != nil {
+			t.Errorf("Expected no error, but got %v", err)
+		}
 
-	expectedResponse := model.Response{
-		BodyLength: 0,
-		StatusCode: http.StatusInternalServerError,
-	}
+		expectedResponse := model.Response{
+			BodyLength: 0,
+			StatusCode: http.StatusInternalServerError,
+		}
 
-	if response.BodyLength != expectedResponse.BodyLength {
-		t.Errorf("Expected body length %d, but got %d", expectedResponse.BodyLength, response.BodyLength)
-	}
+		if response.BodyLength != expectedResponse.BodyLength {
+			t.Errorf("Expected body length %d, but got %d", expectedResponse.BodyLength, response.BodyLength)
+		}
+	})
 }
 
 func TestMakeRequest_Timeout(t *testing.T) {
-	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		time.Sleep(1 * time.Second)
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"message": "success"}`))
-	}))
-	defer mockServer.Close()
+	t.Run("should return a timeout error when the request timed out", func(t *testing.T) {
+		mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			time.Sleep(1 * time.Second)
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"message": "success"}`))
+		}))
+		defer mockServer.Close()
 
-	request := model.Request{
-		Method:  "GET",
-		Url:     mockServer.URL,
-		Timeout: 1,
-	}
+		request := model.Request{
+			Method:  "GET",
+			Url:     mockServer.URL,
+			Timeout: 1,
+		}
 
-	err, _ := MakeRequest(request)
+		err, _ := MakeRequest(request)
 
-	if err == nil {
-		t.Error("Expected a timeout error, but got nil")
-	}
+		if err == nil {
+			t.Error("Expected a timeout error, but got nil")
+		}
+	})
 }
 
 func TestMakeRequest_WithHeaders(t *testing.T) {
@@ -134,7 +138,7 @@ func TestMakeRequest_Error(t *testing.T) {
 		wantError bool
 	}{
 		{
-			name: "Invalid URL",
+			name: "Request should return an error when the url is invalid",
 			request: model.Request{
 				Method: "GET",
 				Url:    "htp://invalid-url", // Malformed URL
@@ -142,7 +146,7 @@ func TestMakeRequest_Error(t *testing.T) {
 			wantError: true,
 		},
 		{
-			name: "Invalid HTTP Method",
+			name: "Request should return an error when the http method is invalid",
 			request: model.Request{
 				Method: "INVALID", // Unsupported HTTP method
 				Url:    "http://example.com",
@@ -150,7 +154,7 @@ func TestMakeRequest_Error(t *testing.T) {
 			wantError: true,
 		},
 		{
-			name: "Valid Request",
+			name: "Request should not error as it is a valid request, as a base test case",
 			request: model.Request{
 				Method: "GET", // Valid GET request
 				Url:    "http://example.com",
