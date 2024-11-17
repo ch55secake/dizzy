@@ -71,14 +71,18 @@ func openFile(filepath string) (*os.File, error) {
 			return nil, err
 		}
 	}
+
+	return file, nil
+}
+
+// closeFile will close the given file
+func closeFile(file *os.File) {
 	defer func(file *os.File) {
 		err := file.Close()
 		if err != nil {
 			log.Fatalf("Error closing file: %v", err)
 		}
 	}(file)
-
-	return file, nil
 }
 
 // readFile will read in the file but first check whether the file is a text file
@@ -96,6 +100,8 @@ func (w *WordList) readFile(filepath string) error {
 			data = append(data, []byte(text))
 		}
 	}
+
+	closeFile(file)
 
 	w.filepath = filepath
 	w.data = data

@@ -1,6 +1,7 @@
 package input
 
 import (
+	"log"
 	"os"
 	"testing"
 )
@@ -35,46 +36,52 @@ func TestWordList_Size(t *testing.T) {
 
 }
 
-// Need to fix this
 func TestWordList_NewWordList(t *testing.T) {
-	mockFile := "mockfile.txt"
-	content := []byte("word1\nword2\nword3\n")
-	err := os.WriteFile(mockFile, content, 0644)
-	if err != nil {
-		t.Fatalf("failed to create mock file: %v", err)
-	}
-	defer os.Remove(mockFile)
-
-	wl := &WordList{}
-
-	err = wl.NewWordList(mockFile)
-	if err != nil {
-		t.Errorf("NewWordList returned an unexpected error: %v", err)
-	}
-
-	expectedWords := [][]byte{
-		[]byte("word1"),
-		[]byte("word2"),
-		[]byte("word3"),
-	}
-
-	if len(wl.data) != len(expectedWords) {
-		t.Errorf("Expected %d words, got %d", len(expectedWords), len(wl.data))
-	}
-
-	for i, word := range wl.data {
-		if string(word) != string(expectedWords[i]) {
-			t.Errorf("Word at index %d: got %q, want %q", i, word, expectedWords[i])
+	t.Run("should populate the word list of given mockfile", func(t *testing.T) {
+		mockFile := "mockfile.txt"
+		content := []byte("word1\nword2\nword3\n")
+		err := os.WriteFile(mockFile, content, 0644)
+		if err != nil {
+			t.Fatalf("failed to create mock file: %v", err)
 		}
-	}
+		defer os.Remove(mockFile)
 
-	err = wl.NewWordList("nonexistent.txt")
-	if err == nil {
-		t.Errorf("Expected an error for a non-existent file, but got nil")
-	}
+		wl := &WordList{}
+
+		err = wl.NewWordList(mockFile)
+		if err != nil {
+			t.Errorf("NewWordList returned an unexpected error: %v", err)
+		}
+
+		expectedWords := [][]byte{
+			[]byte("word1"),
+			[]byte("word2"),
+			[]byte("word3"),
+		}
+
+		if len(wl.data) != len(expectedWords) {
+			t.Errorf("Expected %d words, got %d", len(expectedWords), len(wl.data))
+		}
+
+		for i, word := range wl.data {
+			log.Printf("Word at index %d: got %q", i, string(word))
+			if string(word) != string(expectedWords[i]) {
+				t.Errorf("Word at index %d: got %q, want %q", i, word, expectedWords[i])
+			}
+		}
+	})
+
+	t.Run("should return an error if file does not exist", func(t *testing.T) {
+		wl := &WordList{}
+		err := wl.NewWordList("skibidi-rizz-ohio-file.txt")
+		if err == nil {
+			t.Errorf("Expected an error for a file that doesnt exist, but got nil")
+		}
+	})
 }
 
 func TestWordList_readFile(t *testing.T) {
+
 }
 
 func Test_isFileReadable(t *testing.T) {
