@@ -26,7 +26,7 @@ func MakeRequest(request model.Request) (error, model.Response) {
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
 			return fmt.Errorf("request timed out: %w", context.DeadlineExceeded), model.Response{
-				StatusCode: 408, // 408 indicates timeout says google
+				StatusCode: 408, // 408 indicates timeout
 				BodyLength: 0,
 			}
 		}

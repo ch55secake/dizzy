@@ -81,11 +81,108 @@ func TestWordList_NewWordList(t *testing.T) {
 }
 
 func TestWordList_readFile(t *testing.T) {
+	t.Run("should read the file content without returning an error", func(t *testing.T) {
+		mockFile := "mockfile.txt"
+		content := []byte("word1\nword2\nword3\n")
+		err := os.WriteFile(mockFile, content, 0644)
+		if err != nil {
+			t.Fatalf("failed to create mock file: %v", err)
+		}
+		defer os.Remove(mockFile)
 
+		wl := &WordList{}
+		err = wl.readFile(mockFile)
+
+		if err != nil {
+			t.Errorf("readFile returned an unexpected error: %v", err)
+		}
+	})
 }
 
 func Test_isFileReadable(t *testing.T) {
+	tests := []struct {
+		name           string
+		wantError      bool
+		permissionCode os.FileMode
+		fileName       string
+		readable       bool
+		shouldExist    bool
+	}{
+		{
+			name:           "should return true if file exists and is readable",
+			wantError:      false,
+			permissionCode: 0644,
+			fileName:       "mockfile.txt",
+			readable:       true,
+			shouldExist:    true,
+		},
+		{
+			name:           "should return false if there is no permission to read the file",
+			wantError:      true,
+			permissionCode: 0333,
+			fileName:       "mockfile.txt",
+			readable:       false,
+			shouldExist:    true,
+		},
+		{
+			name:           "should return false and error if there is no permission to read the file",
+			wantError:      true,
+			permissionCode: 0644,
+			fileName:       "i-dont-exist.txt",
+			readable:       false,
+			shouldExist:    false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.shouldExist {
+				content := []byte("word1\nword2\nword3\n")
+				err := os.WriteFile(tt.fileName, content, tt.permissionCode)
+				if err != nil {
+					t.Fatalf("failed to create mock file: %v", err)
+				}
+				defer os.Remove(tt.fileName)
+			}
+
+			result, err := isFileReadable(tt.fileName)
+
+			if tt.wantError {
+				if err == nil {
+					t.Errorf("Expected error, got result: %v and err: %v", result, err)
+				}
+
+			} else {
+				if err != nil {
+					t.Errorf("Expected no error, but got: %v", err)
+				}
+			}
+
+			if result != tt.readable {
+				t.Errorf("isFileReadable returned %t, want %t", result, tt.readable)
+			}
+		})
+	}
 }
 
 func Test_openFile(t *testing.T) {
+	t.Run("should open the file without error", func(t *testing.T) {
+		mockFile := "mockfile.txt"
+		content := []byte("word1\nword2\nword3\n")
+		err := os.WriteFile(mockFile, content, 0644)
+		if err != nil {
+			t.Fatalf("failed to create mock file: %v", err)
+		}
+		defer os.Remove(mockFile)
+
+		file, err := openFile(mockFile)
+
+		if err != nil {
+			t.Errorf("openFile returned an unexpected error: %v", err)
+		}
+
+		if file == nil {
+			t.Errorf("openFile returned nil file")
+		}
+	})
 }
