@@ -3,9 +3,12 @@ package client
 import (
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"testing"
 	"time"
 )
+
+// Fix whole test class
 
 func TestMakeRequest(t *testing.T) {
 	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -146,10 +149,12 @@ func TestMakeRequest_WithHeaders(t *testing.T) {
 	}
 }
 
+// Fix me
 func TestMakeRequest_Error(t *testing.T) {
 	tests := []struct {
 		name      string
 		request   Request
+		requester Requester
 		wantError bool
 	}{
 		{
@@ -195,6 +200,31 @@ func TestMakeRequest_Error(t *testing.T) {
 				if err != nil {
 					t.Errorf("Expected no error, but got: %v", err)
 				}
+			}
+		})
+	}
+}
+
+func Test_isValidHttpMethod(t *testing.T) {
+	type args struct {
+		r *Requester
+	}
+	tests := []struct {
+		name  string
+		args  args
+		want  error
+		want1 bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, got1 := isValidHttpMethod(tt.args.r)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("isValidHttpMethod() got = %v, want %v", got, tt.want)
+			}
+			if got1 != tt.want1 {
+				t.Errorf("isValidHttpMethod() got1 = %v, want %v", got1, tt.want1)
 			}
 		})
 	}
