@@ -16,8 +16,8 @@ type WordList struct {
 	filepath string
 }
 
-// transformWordListToRequests transform all list of words to a list of requests that will be handled by the executor
-func (w *WordList) transformWordListToRequests(url string) ([]client.Request, error) {
+// TransformWordListToRequests transform all list of words to a list of requests that will be handled by the executor
+func (w *WordList) TransformWordListToRequests(url string) ([]client.Request, error) {
 	var requests []client.Request
 	for value := range w.data {
 		requests = append(requests, client.Request{
