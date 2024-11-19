@@ -8,8 +8,6 @@ import (
 	"time"
 )
 
-// Fix whole test class
-
 func TestMakeRequest(t *testing.T) {
 	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -21,15 +19,14 @@ func TestMakeRequest(t *testing.T) {
 	}))
 	defer mockServer.Close()
 
-	r := Requester{
-		Timeout: 5,
-	}
-
 	request := Request{
-		Method:    "GET",
 		Url:       mockServer.URL,
 		Subdomain: "/banana",
-		Timeout:   5,
+	}
+
+	r := Requester{
+		Timeout: 1 * time.Second,
+		Method:  "GET",
 	}
 
 	err, response := r.MakeRequest(request)
@@ -56,13 +53,12 @@ func TestMakeRequest_WhenBodyHasNoLength(t *testing.T) {
 		defer mockServer.Close()
 
 		request := Request{
-			Method:  "GET",
-			Url:     mockServer.URL,
-			Timeout: 5,
+			Url: mockServer.URL,
 		}
 
 		r := Requester{
-			Timeout: 5,
+			Timeout: 1 * time.Second,
+			Method:  "GET",
 		}
 
 		err, response := r.MakeRequest(request)
@@ -92,13 +88,12 @@ func TestMakeRequest_Timeout(t *testing.T) {
 		defer mockServer.Close()
 
 		request := Request{
-			Method:  "GET",
-			Url:     mockServer.URL,
-			Timeout: 1,
+			Url: mockServer.URL,
 		}
 
 		r := Requester{
 			Timeout: 1,
+			Method:  "GET",
 		}
 
 		err, _ := r.MakeRequest(request)
@@ -122,16 +117,15 @@ func TestMakeRequest_WithHeaders(t *testing.T) {
 	defer mockServer.Close()
 
 	request := Request{
-		Method:  "GET",
-		Url:     mockServer.URL,
-		Timeout: 5,
-		Headers: map[string]string{
-			"Content-Type": "application/json",
-		},
+		Url: mockServer.URL,
 	}
 
 	r := Requester{
-		Timeout: 5,
+		Timeout: 5 * time.Second,
+		Method:  "GET",
+		Headers: map[string]string{
+			"Content-Type": "application/json",
+		},
 	}
 
 	err, response := r.MakeRequest(request)
@@ -149,7 +143,6 @@ func TestMakeRequest_WithHeaders(t *testing.T) {
 	}
 }
 
-// Fix me
 func TestMakeRequest_Error(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -159,25 +152,36 @@ func TestMakeRequest_Error(t *testing.T) {
 	}{
 		{
 			name: "Request should return an error when the url is invalid",
+			requester: Requester{
+				Timeout: 5 * time.Second,
+				Method:  "GET",
+			},
 			request: Request{
-				Method: "GET",
-				Url:    "htp://invalid-url", // Malformed URL
+				Url: "htp://invalid-url", // Malformed URL
 			},
 			wantError: true,
 		},
 		{
 			name: "Request should return an error when the http method is invalid",
+			requester: Requester{
+				Timeout: 5 * time.Second,
+				// Unsupported HTTP method
+				Method: "INVALID",
+			},
 			request: Request{
-				Method: "INVALID", // Unsupported HTTP method
-				Url:    "http://example.com",
+				Url: "http://example.com",
 			},
 			wantError: true,
 		},
 		{
 			name: "Request should not error as it is a valid request, as a base test case",
+			requester: Requester{
+				Timeout: 5 * time.Second,
+				Method:  "GET",
+			},
 			request: Request{
-				Method: "GET", // Valid GET request
-				Url:    "http://example.com",
+				// Valid GET request
+				Url: "http://example.com",
 			},
 			wantError: false,
 		},
@@ -185,11 +189,7 @@ func TestMakeRequest_Error(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r := Requester{
-				Timeout: 5,
-			}
-
-			err, response := r.MakeRequest(tt.request)
+			err, response := tt.requester.MakeRequest(tt.request)
 
 			if tt.wantError {
 				if err == nil {

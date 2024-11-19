@@ -122,7 +122,7 @@ func isValidHttpMethod(r *Requester) (error, bool) {
 	}
 
 	if !validMethods[r.Method] {
-		return fmt.Errorf("invalid HTTP method: %s", r.Method), true
+		return fmt.Errorf("invalid HTTP method: %s", r.Method), false
 	}
-	return nil, false
+	return nil, true
 }
