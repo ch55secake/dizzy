@@ -73,7 +73,7 @@ func (r *Requester) MakeRequest(request Request) (error, Response) {
 func (r *Requester) sendRequest(request Request, client http.Client) (error, int, int) {
 	invalidError, valid := isValidHttpMethod(r)
 	if valid {
-		req, err := http.NewRequest(r.Method, request.Url, nil)
+		req, err := http.NewRequest(r.Method, request.ToString(), nil)
 		if err != nil {
 			return fmt.Errorf("error occurred creating request: %w", err), 0, 400
 		}

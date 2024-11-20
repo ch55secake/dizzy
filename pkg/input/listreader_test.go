@@ -2,6 +2,8 @@ package input
 
 import (
 	"log"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"testing"
 )
@@ -183,6 +185,45 @@ func Test_openFile(t *testing.T) {
 
 		if file == nil {
 			t.Errorf("openFile returned nil file")
+		}
+	})
+}
+
+func TestWordList_TransformWordListToRequests(t *testing.T) {
+	t.Run("should transform wordlist to requests", func(t *testing.T) {
+		mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			_, err := w.Write([]byte(`{"message": "success"}`))
+			if err != nil {
+				return
+			}
+		}))
+		defer mockServer.Close()
+
+		mockFile := "mockfile.txt"
+		content := []byte("word1\nword2\nword3\n")
+		wl := &WordList{}
+		err := wl.NewWordList(mockFile)
+		err = os.WriteFile(mockFile, content, 0644)
+		if err != nil {
+			t.Fatalf("failed to create mock file: %v", err)
+		}
+		defer os.Remove(mockFile)
+
+		if err != nil {
+			t.Errorf("unexpected error returned when creating a new wordlist: %v", err)
+		}
+
+		requests, err := wl.TransformWordListToRequests(mockServer.URL)
+		if err != nil {
+			return
+		}
+
+		for _, request := range requests {
+			if request.Subdomain == "" {
+				t.Errorf("TransformWordListToRequests returned nil request")
+			}
 		}
 	})
 }
