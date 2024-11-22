@@ -52,6 +52,7 @@ func (r *Requester) MakeRequest(request Request) (error, Response) {
 				BodyLength: 0,
 			}
 		}
+		// TODO: Retry here on TCP connect/dial errors
 		return fmt.Errorf("error fetching response, statusCode: %v bodyLength: %v, err: %v", statusCode, bodyLength, err), Response{
 			StatusCode: statusCode,
 			BodyLength: bodyLength,

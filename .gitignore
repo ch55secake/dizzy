@@ -26,3 +26,4 @@ go.work.sum
 
 #.idea, ignore jetbrains folder
 .idea
+testdata

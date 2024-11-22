@@ -2,9 +2,11 @@ package job
 
 import (
 	"github.com/ch55secake/dizzy/pkg/client"
+	"log"
 	"sync"
 )
 
+// TODO: Figure out how to batch jobs/worker pool at around 300
 type Dispatcher struct {
 	WorkerPool chan chan *Job
 	JobQueue   chan *Job
@@ -35,6 +37,7 @@ func (d *Dispatcher) Run(r *client.Requester) {
 			Requester:  r,
 			wg:         d.wg,
 		}
+		//log.Printf("Starting worker %d", worker.ID)
 		worker.Start()
 		d.WorkerPool <- worker.JobChannel
 		d.Workers[i] = worker
@@ -54,6 +57,7 @@ func (d *Dispatcher) dispatch() {
 
 // Submit adds a job to the job queue
 func (d *Dispatcher) Submit(job *Job) {
+	log.Println("Submitting job", job.ID)
 	d.wg.Add(1)
 	d.JobQueue <- job
 }

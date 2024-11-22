@@ -16,12 +16,13 @@ type Job struct {
 
 // NewJob will return a job with a random id and a given request, this job will then be added to the queue
 func NewJob(id int, request client.Request) *Job {
+	//log.Printf("Creating job with ID: %d", id)
 	return &Job{
 		ID: id,
 		Execute: func(client *client.Requester) {
 			err, _ := client.MakeRequest(request)
 			if err != nil {
-				log.Fatalf("Error creating new job with id: %d and err: %v", id, err)
+				log.Printf("Error creating new job with id: %d and err: %v", id, err)
 			}
 		},
 	}

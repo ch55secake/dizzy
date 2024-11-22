@@ -1,7 +1,6 @@
 package executor
 
 import (
-	"fmt"
 	"github.com/ch55secake/dizzy/pkg/client"
 	"github.com/ch55secake/dizzy/pkg/input"
 	"github.com/ch55secake/dizzy/pkg/job"
@@ -11,7 +10,6 @@ import (
 )
 
 type DefaultExecutor struct {
-	Filepath string
 	job.Dispatcher
 	WorkerCount int
 	QueueSize   int
@@ -31,11 +29,9 @@ func (e *DefaultExecutor) Execute(filepath string, url string) {
 
 	requests, err := wl.TransformWordListToRequests(url)
 
-	id := rand.Int()
-
 	var jobs []*job.Job
 	for _, request := range requests {
-		jobs = append(jobs, job.NewJob(id, request))
+		jobs = append(jobs, job.NewJob(rand.Int(), request))
 	}
 
 	for _, jobToSubmit := range jobs {
@@ -50,5 +46,5 @@ func (e *DefaultExecutor) Execute(filepath string, url string) {
 	e.Dispatcher.Run(r)
 
 	e.Dispatcher.Wait()
-	fmt.Printf("jobs completed, total jobs: %d\n", len(jobs))
+	log.Printf("jobs completed, total jobs: %d\n", len(jobs))
 }
