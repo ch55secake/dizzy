@@ -59,6 +59,7 @@ func (w *WordList) Size() int {
 func isFileReadable(filepath string) (bool, error) {
 	_, err := os.Stat(filepath)
 	if err != nil { // this will get statistics about the provided file
+		log.Fatalf("file stat returned error: %v", err)
 		return false, err
 	}
 	f, err := os.Open(filepath)

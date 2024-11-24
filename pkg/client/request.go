@@ -1,6 +1,6 @@
 package client
 
-import "log"
+import log "github.com/sirupsen/logrus"
 
 // Request structure will be used to send requests and later on as flags as part the command
 type Request struct {
@@ -26,7 +26,7 @@ func (req Request) isValid() bool {
 // ToString will combine the given subdomain with the url unless the subdomain is nil
 func (req Request) ToString() string {
 	if req.isValid() {
-		log.Printf("combined url: %v", req.Url+"/"+req.Subdomain)
+		log.Debugf("Concatenated url request will be made with: %v", req.Url+"/"+req.Subdomain)
 		return req.Url + "/" + req.Subdomain
 	}
 	return req.Url

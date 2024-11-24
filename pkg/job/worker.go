@@ -2,7 +2,7 @@ package job
 
 import (
 	"github.com/ch55secake/dizzy/pkg/client"
-	"log"
+	"github.com/sirupsen/logrus"
 	"sync"
 )
 
@@ -18,7 +18,7 @@ type Worker struct {
 func (w *Worker) Start() {
 	go func() {
 		for job := range w.JobChannel {
-			log.Printf("Worker %d starting job %d", w.ID, job.ID)
+			logrus.Debugf("Worker %d starting job %d", w.ID, job.ID)
 			job.Execute(w.Requester)
 			w.wg.Done()
 		}

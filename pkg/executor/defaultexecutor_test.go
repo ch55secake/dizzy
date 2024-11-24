@@ -1,7 +1,6 @@
 package executor
 
 import (
-	"github.com/ch55secake/dizzy/pkg/job"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -32,13 +31,16 @@ func TestDefaultExecutor_Execute(t *testing.T) {
 		}
 		defer os.Remove(mockFile)
 
-		testExecutor := &DefaultExecutor{
-			Dispatcher:  *job.NewDispatcher(600, 1400),
-			WorkerCount: 600,
-			QueueSize:   1400,
+		ctx := ExecutionContext{
+			Filepath:       "/Users/oscar/Projects/dizzy/pkg/testdata/testlist.txt",
+			Url:            mockServer.URL,
+			ResponseLength: 0,
+			Timeout:        0,
+			Method:         "GET",
+			Headers:        nil,
 		}
 
-		testExecutor.Execute("~/singlewordtestlist.txt", mockServer.URL)
+		Execute(ctx)
 
 	})
 }

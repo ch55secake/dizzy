@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"io"
-	"log"
 	"net/http"
 	"time"
 )
@@ -18,11 +18,11 @@ type Requester struct {
 
 // NewRequester will create a new requester object that will allow you to set a timeout
 func NewRequester(timeout time.Duration, method string, headers map[string]string) *Requester {
-	if timeout == 0 {
-		log.Printf("Cannot have a timeout of zero, will default to a timeout of ten seconds")
+	if timeout == 0 || method == "" {
+		log.Infof("Cannot have a timeout of zero, will default to a timeout of ten seconds")
 		return &Requester{
 			Timeout: 10 * time.Second,
-			Method:  method,
+			Method:  "GET",
 			Headers: headers,
 		}
 	}
@@ -47,13 +47,18 @@ func (r *Requester) MakeRequest(request Request) (error, Response) {
 	err, bodyLength, statusCode := r.sendRequest(request, c)
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
-			return fmt.Errorf("request timed out: %w", context.DeadlineExceeded), Response{
-				StatusCode: 408, // 408 indicates timeout
+			log.Errorf("Request timed out")
+			return err, Response{
+				StatusCode: 408,
 				BodyLength: 0,
 			}
 		}
 		// TODO: Retry here on TCP connect/dial errors
-		return fmt.Errorf("error fetching response, statusCode: %v bodyLength: %v, err: %v", statusCode, bodyLength, err), Response{
+		log.WithFields(log.Fields{
+			"statusCode": statusCode,
+			"bodyLength": bodyLength,
+		}).Errorf("Error fetching response, statusCode: %v bodyLength: %v", statusCode, bodyLength)
+		return err, Response{
 			StatusCode: statusCode,
 			BodyLength: bodyLength,
 		}
@@ -64,9 +69,7 @@ func (r *Requester) MakeRequest(request Request) (error, Response) {
 		BodyLength: bodyLength,
 	}
 
-	log.Printf("Response body length: %d \n", response.BodyLength)
-	log.Printf("Status code: %d \n", response.StatusCode)
-
+	log.Infof("Response has body length of %v and a status of %v", response.BodyLength, response.StatusCode)
 	return nil, response
 }
 
@@ -76,6 +79,10 @@ func (r *Requester) sendRequest(request Request, client http.Client) (error, int
 	if valid {
 		req, err := http.NewRequest(r.Method, request.ToString(), nil)
 		if err != nil {
+			log.WithFields(log.Fields{
+				"method":  r.Method,
+				"request": request.ToString(),
+			}).Errorf("Error creating request.")
 			return fmt.Errorf("error occurred creating request: %w", err), 0, 400
 		}
 
@@ -94,7 +101,7 @@ func (r *Requester) sendRequest(request Request, client http.Client) (error, int
 		}
 		defer func(Body io.ReadCloser) {
 			if closeErr := Body.Close(); closeErr != nil {
-				log.Printf("Warning: error occurred closing body: %v", closeErr)
+				log.Warnf("Warning: error occurred closing body: %v", closeErr)
 			}
 		}(resp.Body)
 
