@@ -1,6 +1,6 @@
 # dizzy
 
-> Note: this is still WIP. Will write installation and other usualable commands at some point 
+> Note: this is still WIP. Use at your own peril.  
 
 Endpoint sniffer, take in a list of words and then make requests and notify if the request was successful against the given `subdomain` and or 
 `endpoint`. 
