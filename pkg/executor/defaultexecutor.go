@@ -2,6 +2,8 @@
 package executor
 
 import (
+	"fmt"
+	"github.com/ch55secake/dizzy/pkg/output"
 	"math"
 	"math/rand"
 	"time"
@@ -14,12 +16,13 @@ import (
 
 // ExecutionContext contains important information needed for execution as in where files are coming from
 type ExecutionContext struct {
-	Filepath       string
-	URL            string
-	ResponseLength int
-	Timeout        time.Duration
-	Method         string
-	Headers        map[string]string
+	Filepath          string
+	URL               string
+	ResponseLength    int
+	Timeout           time.Duration
+	Method            string
+	Headers           map[string]string
+	OnlyOutputFailure bool
 }
 
 // DefaultExecutor is the default executor for any given job
@@ -54,13 +57,17 @@ func Execute(ctx ExecutionContext) {
 	// Convert int to float for division, round it, convert back to int
 	dispatcher := job.NewDispatcher(int(math.Round(float64(len(requests))/3)), len(requests))
 
+	output.PrintCyanMessage(fmt.Sprintf("Running %v jobs at: %v", len(jobs), time.Now().Format("15:04:05")), true)
 	for _, jobToSubmit := range jobs {
 		dispatcher.Submit(jobToSubmit)
 	}
 
-	r := client.NewRequester(ctx.Timeout, ctx.Method, ctx.Headers)
+	timeStarted := time.Now()
+	r := client.NewRequester(ctx.Timeout, ctx.Method, ctx.Headers, ctx.OnlyOutputFailure)
+	output.PrintMagentaMessage(fmt.Sprintf("%-3s %-20s %-10s %-15s", "", "Path", "Status", "Body Length"), true)
 	dispatcher.Run(r)
 
 	dispatcher.Wait()
-	log.Infof("jobs completed, total jobs: %d\n", len(jobs))
+	output.PrintCyanMessage(fmt.Sprintf("Finished %v jobs at: %v, total time taken: %v ", len(jobs),
+		time.Now().Format("15:04:05"), time.Since(timeStarted)), true)
 }
