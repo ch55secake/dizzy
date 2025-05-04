@@ -36,6 +36,9 @@ linters-settings:
   revive:
     severity: warning
     ignore-generated-header: true
+    rules:
+      - name: package-comments
+        severity: disabled
   errcheck:
     check-type-assertions: true
   gocritic:

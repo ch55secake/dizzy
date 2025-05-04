@@ -1,8 +1,10 @@
+// Package job provides implementation for managing a queue of jobs
 package job
 
 import (
-	"github.com/ch55secake/dizzy/pkg/client"
 	"log"
+
+	"github.com/ch55secake/dizzy/pkg/client"
 )
 
 // Task represents the function type for job logic and also what will be done
@@ -16,11 +18,10 @@ type Job struct {
 
 // NewJob will return a job with a random id and a given request, this job will then be added to the queue
 func NewJob(id int, request client.Request) *Job {
-	//log.Printf("Creating job with ID: %d", id)
 	return &Job{
 		ID: id,
 		Execute: func(client *client.Requester) {
-			err, _ := client.MakeRequest(request)
+			_, err := client.MakeRequest(request)
 			if err != nil {
 				log.Printf("Error creating new job with id: %d and err: %v", id, err)
 			}
