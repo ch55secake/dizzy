@@ -3,6 +3,7 @@ package cmd
 
 import (
 	"encoding/json"
+	"github.com/ch55secake/dizzy/pkg/output"
 	"log"
 	"os"
 	"time"
@@ -36,6 +37,7 @@ var rootCmd = &cobra.Command{
 		// TODO: Filter output by length
 		lengthFlag, _ := cmd.Flags().GetInt("length")
 		debugFlag, _ := cmd.Flags().GetBool("debug")
+		onlyFailedRequests, _ := cmd.Flags().GetBool("only-failed-requests")
 
 		var headers map[string]string
 		if headersFlag != "" {
@@ -50,14 +52,15 @@ var rootCmd = &cobra.Command{
 		}
 
 		ctx := executor.ExecutionContext{
-			Filepath:       wordlistFlag,
-			URL:            args[0],
-			ResponseLength: lengthFlag,
-			Timeout:        time.Duration(timeoutFlag) * time.Second,
-			Method:         methodFlag,
-			Headers:        headers,
+			Filepath:          wordlistFlag,
+			URL:               args[0],
+			ResponseLength:    lengthFlag,
+			Timeout:           time.Duration(timeoutFlag) * time.Second,
+			Method:            methodFlag,
+			Headers:           headers,
+			OnlyOutputFailure: onlyFailedRequests,
 		}
-
+		output.DefaultMessage()
 		executor.Execute(ctx)
 	},
 }
@@ -81,4 +84,5 @@ func init() {
 	rootCmd.Flags().StringP("headers", "H", "", "specify headers to add to each request, accepted as json")
 	rootCmd.Flags().Int32P("length", "l", 0, "filter output by length of response body")
 	rootCmd.Flags().BoolP("debug", "d", false, "enable extra debug logging")
+	rootCmd.Flags().BoolP("only-failed-requests", "O", false, "only output failed requests")
 }

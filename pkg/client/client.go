@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/ch55secake/dizzy/pkg/output"
 	"io"
 	"net/http"
 	"time"
@@ -14,25 +15,28 @@ import (
 
 // Requester is the default implementation for the http client
 type Requester struct {
-	Timeout time.Duration     `json:"timeout"`
-	Method  string            `json:"method"`
-	Headers map[string]string `json:"header"`
+	Timeout           time.Duration     `json:"timeout"`
+	Method            string            `json:"method"`
+	Headers           map[string]string `json:"header"`
+	OnlyOutputFailure bool              `json:"only_output_failure"`
 }
 
 // NewRequester will create a new requester object that will allow you to set a timeout
-func NewRequester(timeout time.Duration, method string, headers map[string]string) *Requester {
+func NewRequester(timeout time.Duration, method string, headers map[string]string, onlyFailure bool) *Requester {
 	if timeout == 0 || method == "" {
-		log.Infof("Cannot have a timeout of zero, will default to a timeout of ten seconds")
+		output.PrintCyanMessage("Cannot have a timeout of zero, will default to a timeout of ten seconds", true)
 		return &Requester{
-			Timeout: 10 * time.Second,
-			Method:  "GET",
-			Headers: headers,
+			Timeout:           10 * time.Second,
+			Method:            "GET",
+			Headers:           headers,
+			OnlyOutputFailure: onlyFailure,
 		}
 	}
 	return &Requester{
-		Timeout: timeout,
-		Method:  method,
-		Headers: headers,
+		Timeout:           timeout,
+		Method:            method,
+		Headers:           headers,
+		OnlyOutputFailure: onlyFailure,
 	}
 }
 
@@ -56,23 +60,18 @@ func (r *Requester) MakeRequest(request Request) (Response, error) {
 				BodyLength: 0,
 			}, err
 		}
-		// TODO: Retry here on TCP connect/dial errors
-		log.WithFields(log.Fields{
-			"statusCode": statusCode,
-			"bodyLength": bodyLength,
-		}).Errorf("Error fetching response, statusCode: %v bodyLength: %v", statusCode, bodyLength)
-		return Response{
-			StatusCode: statusCode,
-			BodyLength: bodyLength,
-		}, err
 	}
 
 	response := Response{
 		StatusCode: statusCode,
 		BodyLength: bodyLength,
+		Subdomain:  request.Subdomain,
 	}
-
-	log.Infof("Response has body length of %v and a status of %v", response.BodyLength, response.StatusCode)
+	if r.OnlyOutputFailure && response.StatusCode/100 != 2 {
+		output.PrintCyanMessage(fmt.Sprintf("%-3s %-20s %-10d %-15d", "", response.Subdomain, response.StatusCode, response.BodyLength), true)
+	} else if !r.OnlyOutputFailure {
+		output.PrintCyanMessage(fmt.Sprintf("%-3s %-20s %-10d %-15d", "", response.Subdomain, response.StatusCode, response.BodyLength), true)
+	}
 	return response, nil
 }
 
