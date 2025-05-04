@@ -1,15 +1,18 @@
+// Package client provides a client to make http requests with
 package client
 
 import (
 	"context"
 	"errors"
 	"fmt"
-	log "github.com/sirupsen/logrus"
 	"io"
 	"net/http"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 )
 
+// Requester is the default implementation for the http client
 type Requester struct {
 	Timeout time.Duration     `json:"timeout"`
 	Method  string            `json:"method"`
@@ -35,33 +38,33 @@ func NewRequester(timeout time.Duration, method string, headers map[string]strin
 
 // MakeRequest will return either the error if it occurs or the length of the response body,
 // which could indicate that there is something on the path that was just requested for.
-func (r *Requester) MakeRequest(request Request) (error, Response) {
+func (r *Requester) MakeRequest(request Request) (Response, error) {
 	c := http.Client{
 		Timeout: r.Timeout,
 	}
 
-	c.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+	c.CheckRedirect = func(_ *http.Request, _ []*http.Request) error {
 		return http.ErrUseLastResponse
 	}
 
-	err, bodyLength, statusCode := r.sendRequest(request, c)
+	bodyLength, statusCode, err := r.sendRequest(request, c)
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
 			log.Errorf("Request timed out")
-			return err, Response{
+			return Response{
 				StatusCode: 408,
 				BodyLength: 0,
-			}
+			}, err
 		}
 		// TODO: Retry here on TCP connect/dial errors
 		log.WithFields(log.Fields{
 			"statusCode": statusCode,
 			"bodyLength": bodyLength,
 		}).Errorf("Error fetching response, statusCode: %v bodyLength: %v", statusCode, bodyLength)
-		return err, Response{
+		return Response{
 			StatusCode: statusCode,
 			BodyLength: bodyLength,
-		}
+		}, err
 	}
 
 	response := Response{
@@ -70,12 +73,12 @@ func (r *Requester) MakeRequest(request Request) (error, Response) {
 	}
 
 	log.Infof("Response has body length of %v and a status of %v", response.BodyLength, response.StatusCode)
-	return nil, response
+	return response, nil
 }
 
 // sendRequest will send the request with the provided method from the request model.
-func (r *Requester) sendRequest(request Request, client http.Client) (error, int, int) {
-	invalidError, valid := isValidHttpMethod(r)
+func (r *Requester) sendRequest(request Request, client http.Client) (int, int, error) {
+	valid, invalidError := isValidHTTPMethod(r)
 	if valid {
 		req, err := http.NewRequest(r.Method, request.ToString(), nil)
 		if err != nil {
@@ -83,7 +86,7 @@ func (r *Requester) sendRequest(request Request, client http.Client) (error, int
 				"method":  r.Method,
 				"request": request.ToString(),
 			}).Errorf("Error creating request.")
-			return fmt.Errorf("error occurred creating request: %w", err), 0, 400
+			return 0, 400, fmt.Errorf("error occurred creating request: %w", err)
 		}
 
 		if r.Headers != nil {
@@ -95,9 +98,9 @@ func (r *Requester) sendRequest(request Request, client http.Client) (error, int
 		resp, err := client.Do(req)
 		if err != nil {
 			if errors.Is(err, context.DeadlineExceeded) {
-				return context.DeadlineExceeded, 0, 400
+				return 0, 400, context.DeadlineExceeded
 			}
-			return fmt.Errorf("error occurred sending request: %w", err), 0, 400
+			return 0, 400, fmt.Errorf("error occurred sending request: %w", err)
 		}
 		defer func(Body io.ReadCloser) {
 			if closeErr := Body.Close(); closeErr != nil {
@@ -107,16 +110,16 @@ func (r *Requester) sendRequest(request Request, client http.Client) (error, int
 
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
-			return fmt.Errorf("error occurred reading response body: %w", err), 0, 400
+			return 0, 400, fmt.Errorf("error occurred reading response body: %w", err)
 		}
 
-		return nil, len(body), resp.StatusCode
+		return len(body), resp.StatusCode, nil
 	}
-	return invalidError, 0, 400
+	return 0, 400, invalidError
 }
 
-// isValidHttpMethod will determine whether attempted http method is actually a valid operation
-func isValidHttpMethod(r *Requester) (error, bool) {
+// isValidHTTPMethod will determine whether attempted http method is actually a valid operation
+func isValidHTTPMethod(r *Requester) (bool, error) {
 	validMethods := map[string]bool{
 		http.MethodGet:     true,
 		http.MethodHead:    true,
@@ -130,7 +133,7 @@ func isValidHttpMethod(r *Requester) (error, bool) {
 	}
 
 	if !validMethods[r.Method] {
-		return fmt.Errorf("invalid HTTP method: %s", r.Method), false
+		return false, fmt.Errorf("invalid HTTP method: %s", r.Method)
 	}
-	return nil, true
+	return true, nil
 }

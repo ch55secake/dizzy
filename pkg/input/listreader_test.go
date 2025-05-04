@@ -24,7 +24,7 @@ func TestWordList_FilePath(t *testing.T) {
 }
 
 func TestWordList_Size(t *testing.T) {
-	t.Run("should return the file size", func(t *testing.T) {})
+	t.Run("should return the file size", func(_ *testing.T) {})
 	expectedSize := len(make([][]byte, 0))
 	w := &WordList{
 		data: make([][]byte, 0),
@@ -42,11 +42,16 @@ func TestWordList_NewWordList(t *testing.T) {
 	t.Run("should populate the word list of given mockfile", func(t *testing.T) {
 		mockFile := "mockfile.txt"
 		content := []byte("word1\nword2\nword3\n")
-		err := os.WriteFile(mockFile, content, 0644)
+		err := os.WriteFile(mockFile, content, 0600)
 		if err != nil {
 			t.Fatalf("failed to create mock file: %v", err)
 		}
-		defer os.Remove(mockFile)
+		defer func(name string) {
+			err := os.Remove(name)
+			if err != nil {
+				t.Fatalf("failed to remove mock file: %v", err)
+			}
+		}(mockFile)
 
 		wl := &WordList{}
 
@@ -86,11 +91,16 @@ func TestWordList_readFile(t *testing.T) {
 	t.Run("should read the file content without returning an error", func(t *testing.T) {
 		mockFile := "mockfile.txt"
 		content := []byte("word1\nword2\nword3\n")
-		err := os.WriteFile(mockFile, content, 0644)
+		err := os.WriteFile(mockFile, content, 0600)
 		if err != nil {
 			t.Fatalf("failed to create mock file: %v", err)
 		}
-		defer os.Remove(mockFile)
+		defer func(name string) {
+			err := os.Remove(name)
+			if err != nil {
+				t.Fatalf("failed to remove mock file: %v", err)
+			}
+		}(mockFile)
 
 		wl := &WordList{}
 		err = wl.readFile(mockFile)
@@ -144,7 +154,12 @@ func Test_isFileReadable(t *testing.T) {
 				if err != nil {
 					t.Fatalf("failed to create mock file: %v", err)
 				}
-				defer os.Remove(tt.fileName)
+				defer func(name string) {
+					err := os.Remove(name)
+					if err != nil {
+						t.Fatalf("failed to remove mock file: %v", err)
+					}
+				}(tt.fileName)
 			}
 
 			result, err := isFileReadable(tt.fileName)
@@ -171,11 +186,16 @@ func Test_openFile(t *testing.T) {
 	t.Run("should open the file without error", func(t *testing.T) {
 		mockFile := "mockfile.txt"
 		content := []byte("word1\nword2\nword3\n")
-		err := os.WriteFile(mockFile, content, 0644)
+		err := os.WriteFile(mockFile, content, 0600)
 		if err != nil {
 			t.Fatalf("failed to create mock file: %v", err)
 		}
-		defer os.Remove(mockFile)
+		defer func(name string) {
+			err := os.Remove(name)
+			if err != nil {
+				t.Fatalf("failed to remove mock file: %v", err)
+			}
+		}(mockFile)
 
 		file, err := openFile(mockFile)
 
@@ -190,8 +210,8 @@ func Test_openFile(t *testing.T) {
 }
 
 func TestWordList_TransformWordListToRequests(t *testing.T) {
-	t.Run("should transform wordlist to requests", func(t *testing.T) {
-		mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	t.Run("should transform wordlist to requests", func(_ *testing.T) {
+		mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
 			_, err := w.Write([]byte(`{"message": "success"}`))
@@ -205,11 +225,19 @@ func TestWordList_TransformWordListToRequests(t *testing.T) {
 		content := []byte("word1\nword2\nword3\n")
 		wl := &WordList{}
 		err := wl.NewWordList(mockFile)
-		err = os.WriteFile(mockFile, content, 0644)
+		if err != nil {
+			return
+		}
+		err = os.WriteFile(mockFile, content, 0600)
 		if err != nil {
 			t.Fatalf("failed to create mock file: %v", err)
 		}
-		defer os.Remove(mockFile)
+		defer func(name string) {
+			err := os.Remove(name)
+			if err != nil {
+				t.Fatalf("failed to remove mock file: %v", err)
+			}
+		}(mockFile)
 
 		if err != nil {
 			t.Errorf("unexpected error returned when creating a new wordlist: %v", err)

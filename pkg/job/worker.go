@@ -1,9 +1,11 @@
+// Package job provides implementation for managing a queue of jobs
 package job
 
 import (
+	"sync"
+
 	"github.com/ch55secake/dizzy/pkg/client"
 	"github.com/sirupsen/logrus"
-	"sync"
 )
 
 // Worker that will complete the tasks on the jobChannel/Queue

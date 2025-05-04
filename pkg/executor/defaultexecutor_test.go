@@ -10,7 +10,7 @@ import (
 func TestDefaultExecutor_Execute(t *testing.T) {
 	t.Run("should execute without error", func(t *testing.T) {
 
-		mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
 			_, err := w.Write([]byte(`{"message": "success"}`))
@@ -25,15 +25,20 @@ func TestDefaultExecutor_Execute(t *testing.T) {
 		var content []byte
 		content = append(content, []byte("Hello")...)
 		content = append(content, []byte("World")...)
-		err := os.WriteFile(mockFile, content, 0644)
+		err := os.WriteFile(mockFile, content, 0600)
 		if err != nil {
 			t.Fatalf("failed to create mock file: %v", err)
 		}
-		defer os.Remove(mockFile)
+		defer func(name string) {
+			err := os.Remove(name)
+			if err != nil {
+				t.Fatalf("failed to remove mock file: %v", err)
+			}
+		}(mockFile)
 
 		ctx := ExecutionContext{
 			Filepath:       "/Users/oscar/Projects/dizzy/pkg/testdata/testlist.txt",
-			Url:            mockServer.URL,
+			URL:            mockServer.URL,
 			ResponseLength: 0,
 			Timeout:        0,
 			Method:         "GET",

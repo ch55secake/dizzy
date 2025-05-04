@@ -1,24 +1,28 @@
+// Package executor provides a default executor implementation
 package executor
 
 import (
+	"math"
+	"math/rand"
+	"time"
+
 	"github.com/ch55secake/dizzy/pkg/client"
 	"github.com/ch55secake/dizzy/pkg/input"
 	"github.com/ch55secake/dizzy/pkg/job"
 	log "github.com/sirupsen/logrus"
-	"math"
-	"math/rand"
-	"time"
 )
 
+// ExecutionContext contains important information needed for execution as in where files are coming from
 type ExecutionContext struct {
 	Filepath       string
-	Url            string
+	URL            string
 	ResponseLength int
 	Timeout        time.Duration
 	Method         string
 	Headers        map[string]string
 }
 
+// DefaultExecutor is the default executor for any given job
 type DefaultExecutor struct {
 	job.Dispatcher
 	WorkerCount int
@@ -37,11 +41,14 @@ func Execute(ctx ExecutionContext) {
 
 	log.Debugf("generated a wordlist with size %d\n", wl.Size())
 
-	requests, err := wl.TransformWordListToRequests(ctx.Url)
+	requests, err := wl.TransformWordListToRequests(ctx.URL)
+	if err != nil {
+		return
+	}
 
 	var jobs []*job.Job
 	for _, request := range requests {
-		jobs = append(jobs, job.NewJob(rand.Int(), request))
+		jobs = append(jobs, job.NewJob(rand.Int(), request)) // #nosec G404
 	}
 
 	// Convert int to float for division, round it, convert back to int

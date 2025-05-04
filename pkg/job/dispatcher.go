@@ -1,12 +1,15 @@
+// Package job provides implementation for managing a queue of jobs
 package job
 
 import (
-	"github.com/ch55secake/dizzy/pkg/client"
-	log "github.com/sirupsen/logrus"
 	"sync"
 	"time"
+
+	"github.com/ch55secake/dizzy/pkg/client"
+	log "github.com/sirupsen/logrus"
 )
 
+// Dispatcher default implementation of the job dispatcher, includes the queue and the workers
 type Dispatcher struct {
 	WorkerPool chan chan *Job
 	JobQueue   chan *Job

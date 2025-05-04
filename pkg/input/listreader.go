@@ -1,13 +1,15 @@
+// Package input manages an input of a wordlist from user
 package input
 
 import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"github.com/ch55secake/dizzy/pkg/client"
 	"log"
 	"os"
 	"regexp"
+
+	"github.com/ch55secake/dizzy/pkg/client"
 )
 
 // WordList contains the current list of words in a slice of bytes and filepath
@@ -21,13 +23,11 @@ func (w *WordList) TransformWordListToRequests(url string) ([]client.Request, er
 	var requests []client.Request
 	for _, value := range w.data {
 		requests = append(requests, client.Request{
-			Url:       url,
+			URL:       url,
 			Subdomain: bytes.NewBuffer(value).String(),
 		})
-		//log.Printf("adding word, %s", bytes.NewBuffer(value).String())
 	}
 	return requests, nil
-	//return []client.Request{client.EmptyRequest(url)}, fmt.Errorf("no data to form requests out of, returning empty request")
 }
 
 // NewWordList returns the list of data and the attached filepath
@@ -62,7 +62,7 @@ func isFileReadable(filepath string) (bool, error) {
 		log.Fatalf("file stat returned error: %v", err)
 		return false, err
 	}
-	f, err := os.Open(filepath)
+	f, err := os.Open(filepath) // #nosec G304
 	if err != nil {
 		return false, err
 	}
@@ -82,7 +82,7 @@ func openFile(filepath string) (*os.File, error) {
 	if filepath == "-" {
 		file = os.Stdin
 	} else {
-		file, err = os.Open(filepath)
+		file, err = os.Open(filepath) // #nosec G304
 		if err != nil {
 			log.Fatalf("Error opening file: %v", err)
 			return nil, err

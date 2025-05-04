@@ -1,13 +1,14 @@
+// Package cmd provides command entrypoint
 package cmd
 
 import (
 	"encoding/json"
-	"github.com/ch55secake/dizzy/pkg/executor"
-	"github.com/sirupsen/logrus"
 	"log"
 	"os"
 	"time"
 
+	"github.com/ch55secake/dizzy/pkg/executor"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -22,9 +23,9 @@ var rootCmd = &cobra.Command{
 	Long: `                ___
            ____/ (_)_______  __  __
           / __  / /_  /_  / / / / /
-         / /_/ / / / /_/ /_/ /_/ / 
-         \__,_/_/ /___/___/\__, /  
-                          /____/      
+         / /_/ / / / /_/ /_/ /_/ /
+         \__,_/_/ /___/___/\__, /
+                          /____/
           An unsung hero.    `,
 	Run: func(cmd *cobra.Command, args []string) {
 
@@ -50,7 +51,7 @@ var rootCmd = &cobra.Command{
 
 		ctx := executor.ExecutionContext{
 			Filepath:       wordlistFlag,
-			Url:            args[0],
+			URL:            args[0],
 			ResponseLength: lengthFlag,
 			Timeout:        time.Duration(timeoutFlag) * time.Second,
 			Method:         methodFlag,
