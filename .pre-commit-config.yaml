@@ -11,8 +11,6 @@ repos:
     rev: master
     hooks:
       - id: go-fmt
-      - id: go-lint
-      - id: go-critic
       - id: golangci-lint
       - id: go-vet
       - id: go-mod-tidy
